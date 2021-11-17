@@ -36,6 +36,7 @@ func main(){
 func start(c *cli.Context) error {
 	pos := 0
 	mapPos := 0
+	mapPoss := make(map[int]int, 0)
 	d := make(map[int]int64, 0)
 	for i := 0; i < len(input); i++ {
 		switch input[i] {
@@ -52,16 +53,18 @@ func start(c *cli.Context) error {
 		case '>':
 			pos += 1
 		case '[':
-			mapPos = i
+			mapPos ++
+			mapPoss[mapPos] = i
 		case ']':
 			if d[pos] == 0 {
+				mapPos --
 				continue
 			} else {
-				i = mapPos
+				i = mapPoss[mapPos]
 			}
 		case ',':
 		case '.':
-			fmt.Print(string(d[pos]), d[pos])
+			fmt.Print(string(d[pos]))
 		}
 	}
 	return nil

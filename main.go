@@ -48,17 +48,21 @@ func main(){
 }
 
 func start(c *cli.Context) error {
+	var res string
 	if path != "" {
-		withFile(path, inputPath)
+		res = withFile(path, inputPath)
+		fmt.Println(res)
 		return nil
 	}
-	parse(inp, "")
+	res = parse(inp, "")
+	fmt.Println(res)
 	return nil
 }
 
-func parse(input string, inputF string) {
+func parse(input string, inputF string) string {
 	jumpMap(input)
 	pos := 0
+	res := ""
 	inputPos := 0
 	d := make(map[int]uint8, 0)
 	for i := 0; i < len(input); i++ {
@@ -93,12 +97,14 @@ func parse(input string, inputF string) {
 			d[pos] = inputF[inputPos]
 			inputPos++
 		case '.':
-			fmt.Print(string(d[pos]))
+			//fmt.Print(string(d[pos]))
+			res += string(d[pos])
 		}
 	}
+	return res
 }
 
-func withFile(filePath, inputPath string) {
+func withFile(filePath, inputPath string) string {
 	dat, err := os.ReadFile(filePath)
 	if err != nil {
 		panic(err)
@@ -117,7 +123,7 @@ func withFile(filePath, inputPath string) {
 			s += string(i)
 		}
 	}
-	parse(s, string(inputDat))
+	return parse(s, string(inputDat))
 }
 
 func jumpMap(s string) {

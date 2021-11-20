@@ -7,16 +7,24 @@ import (
 )
 
 var (
-	input = ""
+	inp = ""
+	path = ""
 
 	flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:        "input",
 			Aliases:     []string{"i"},
 			Usage: 		"enter input in terminal",
-			Destination: &input,
+			Destination: &inp,
+		},	&cli.StringFlag{
+			Name:        "path",
+			Aliases:     []string{"p"},
+			Usage: 		"enter path to file",
+			Destination: &path,
 		},
 	}
+
+	jump = map[int]int{}
 
 )
 
@@ -34,10 +42,20 @@ func main(){
 }
 
 func start(c *cli.Context) error {
+	if path != "" {
+		withFile(path)
+		return nil
+	}
+	parse(inp)
+	return nil
+}
+
+func parse(input string) {
+	jumpMap(input)
 	pos := 0
 	mapPos := 0
 	mapPoss := make(map[int]int, 0)
-	d := make(map[int]int64, 0)
+	d := make(map[int]int, 0)
 	for i := 0; i < len(input); i++ {
 		switch input[i] {
 		case '+':
@@ -47,18 +65,21 @@ func start(c *cli.Context) error {
 				d[pos] = 1
 			}
 		case '-':
-			d[pos] -= 1
+			if d[pos] > 0 {
+				d[pos] -= 1
+			}
 		case '<':
 			pos -= 1
 		case '>':
 			pos += 1
 		case '[':
-			mapPos ++
-			mapPoss[mapPos] = i
+			mapPos++
+			mapPoss[mapPos] = i + 1
 		case ']':
 			if d[pos] == 0 {
-				mapPos --
-				continue
+				if mapPos > 0 {
+					mapPos--
+				}
 			} else {
 				i = mapPoss[mapPos]
 			}
@@ -67,5 +88,35 @@ func start(c *cli.Context) error {
 			fmt.Print(string(d[pos]))
 		}
 	}
-	return nil
+}
+
+func withFile(filePath string) {
+	dat, err := os.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	s := ""
+	for _, i := range string(dat) {
+		switch i {
+		case '>','<','.',',','[',']','+','-':
+			s += string(i)
+		}
+	}
+	fmt.Println(s)
+	parse(s)
+}
+
+func jumpMap(s string) {
+	var  mapPos = 0
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '[':
+			mapPos++
+		case ']':
+			mapPos--
+			jump[mapPos] = i
+			jump[i] = mapPos
+		}
+	}
+	fmt.Println(jump)
 }

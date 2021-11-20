@@ -9,6 +9,7 @@ import (
 var (
 	inp = ""
 	path = ""
+	inputPath = ""
 
 	flags = []cli.Flag{
 		&cli.StringFlag{
@@ -21,6 +22,11 @@ var (
 			Aliases:     []string{"p"},
 			Usage: 		"enter path to file",
 			Destination: &path,
+		},&cli.StringFlag{
+			Name:        "inputfile",
+			Aliases:     []string{"if"},
+			Usage: 		"enter path to input file",
+			Destination: &inputPath,
 		},
 	}
 
@@ -43,19 +49,18 @@ func main(){
 
 func start(c *cli.Context) error {
 	if path != "" {
-		withFile(path)
+		withFile(path, inputPath)
 		return nil
 	}
-	parse(inp)
+	parse(inp, "")
 	return nil
 }
 
-func parse(input string) {
+func parse(input string, inputF string) {
 	jumpMap(input)
 	pos := 0
-	mapPos := 0
-	mapPoss := make(map[int]int, 0)
-	d := make(map[int]int, 0)
+	inputPos := 0
+	d := make(map[int]uint8, 0)
 	for i := 0; i < len(input); i++ {
 		switch input[i] {
 		case '+':
@@ -65,35 +70,45 @@ func parse(input string) {
 				d[pos] = 1
 			}
 		case '-':
-			if d[pos] > 0 {
-				d[pos] -= 1
-			}
+			d[pos] -= 1
 		case '<':
+			if pos == 0 {
+				panic("negative memory index")
+			}
 			pos -= 1
 		case '>':
 			pos += 1
 		case '[':
-			mapPos++
-			mapPoss[mapPos] = i + 1
+			if d[pos] == 0 {
+				i = jump[i]
+				continue
+			}
 		case ']':
 			if d[pos] == 0 {
-				if mapPos > 0 {
-					mapPos--
-				}
+				continue
 			} else {
-				i = mapPoss[mapPos]
+				i = jump[i]
 			}
 		case ',':
+			d[pos] = inputF[inputPos]
+			inputPos++
 		case '.':
 			fmt.Print(string(d[pos]))
 		}
 	}
 }
 
-func withFile(filePath string) {
+func withFile(filePath, inputPath string) {
 	dat, err := os.ReadFile(filePath)
 	if err != nil {
 		panic(err)
+	}
+	var inputDat []byte
+	if inputPath != "" {
+		inputDat, err = os.ReadFile(inputPath)
+		if err != nil {
+			panic(err)
+		}
 	}
 	s := ""
 	for _, i := range string(dat) {
@@ -102,21 +117,21 @@ func withFile(filePath string) {
 			s += string(i)
 		}
 	}
-	fmt.Println(s)
-	parse(s)
+	parse(s, string(inputDat))
 }
 
 func jumpMap(s string) {
 	var  mapPos = 0
+	mapPoss := map[int]int{}
 	for i := 0; i < len(s); i++ {
 		switch s[i] {
 		case '[':
 			mapPos++
+			mapPoss[mapPos] = i
 		case ']':
+			jump[mapPoss[mapPos]] = i
+			jump[i] = mapPoss[mapPos]
 			mapPos--
-			jump[mapPos] = i
-			jump[i] = mapPos
 		}
 	}
-	fmt.Println(jump)
 }
